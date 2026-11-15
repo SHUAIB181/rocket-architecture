@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Architect | Spacecraft Design &amp; Launch Simulator</title>
+  <meta name="description" content="Design a spacecraft, explore planetary missions, and simulate a launch in Mission Architect.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Mission Architect">
+  <meta property="og:description" content="Design a spacecraft, explore planetary missions, and simulate a launch.">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/flow.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#08090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="stark-theme">
+
+  <!-- TOP HEADER / MISSION ARCHITECT COMMAND STRIP -->
+  <header class="stark-header">
+    <div class="header-branding">
+      <!-- CUSTOM MISSION ARCHITECT VECTOR LOGO -->
+      <div class="mission-architect-logo-wrapper">
+        <svg viewBox="0 0 100 85" class="mission-architect-logo" aria-label="Mission Architect Logo">
+          <defs>
+            <linearGradient id="maGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00f0ff" />
+              <stop offset="60%" stop-color="#38bdf8" />
+              <stop offset="100%" stop-color="#0284c7" />
+            </linearGradient>
+            <linearGradient id="arcCore" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8" />
+              <stop offset="100%" stop-color="#fbbf24" />
+            </linearGradient>
+            <filter id="maGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <!-- Hexagonal Arc Reactor Outer Housing -->
+          <polygon points="50,5 84,24 84,61 50,80 16,61 16,24" fill="#091322" stroke="url(#maGrad)" stroke-width="2.5" />
+          <polygon points="50,11 78,26 78,58 50,73 22,58 22,26" fill="none" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1" stroke-dasharray="6,3" />
+          
+          <!-- Stylized Chevron Monogram 'M' and 'A' for Mission Architect -->
+          <!-- 'M' outer wings -->
+          <path d="M 27,58 L 38,27 L 50,42 L 62,27 L 73,58 L 65,58 L 57,38 L 50,49 L 43,38 L 35,58 Z" fill="url(#maGrad)" filter="url(#maGlow)" />
+          
+          <!-- 'A' apex vector -->
+          <path d="M 50,20 L 41,54 L 46,54 L 50,41 L 54,41 L 58,54 L 63,54 Z" fill="#ffffff" opacity="0.95" />
+          <polygon points="50,29 47,38 53,38" fill="#091322" />
+          
+          <!-- Orbital Trajectory Ring -->
+          <ellipse cx="50" cy="42" rx="39" ry="14" fill="none" stroke="#fbbf24" stroke-width="2" transform="rotate(-28 50 42)" stroke-dasharray="36 8 14 4" />
+          <circle cx="78" cy="26" r="3.2" fill="#fbbf24" filter="url(#maGlow)" />
+          
+          <!-- Center Arc Reactor Core -->
+          <circle cx="50" cy="42" r="4.8" fill="#00f0ff" filter="url(#maGlow)" />
+          <circle cx="50" cy="42" r="2.2" fill="#ffffff" />
+        </svg>
+      </div>
+      <div class="header-titles">
+        <div class="brand-eyebrow">MISSION ARCHITECT</div>
+        <h1>MISSION ARCHITECT</h1>
+        <span class="sub-title">Interactive Systems Engineering & Planetary Mission Simulator</span>
+      </div>
+    </div>
+
+    <!-- MISSION PRESETS -->
+    <div class="header-presets">
+      <span class="preset-label">Archetypes:</span>
+      <button class="preset-btn" data-preset="lunar_artemis">Artemis Lunar Scout</button>
+      <button class="preset-btn" data-preset="mars_jezero">Mars Jezero Astrobiology</button>
+      <button class="preset-btn" data-preset="earth_sentinel">Earth Climate Sentinel</button>
+      <button class="preset-btn" data-preset="europa_clipper">Europa Ocean Probe</button>
+    </div>
+
+    <!-- AUDIO & SYSTEM CONTROLS -->
+    <div class="header-controls">
+      <button id="mute-btn" class="header-action-btn">🔊 Audio: ON</button>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="mission-nav">
+    <button class="nav-tab active" data-tab="briefing">
+      <span class="tab-step">01</span> MISSION BRIEFING
+    </button>
+    <button class="nav-tab" data-tab="engineering">
+      <span class="tab-step">02</span> SPACECRAFT ENGINEERING BAY
+    </button>
+    <button class="nav-tab" data-tab="launch">
+      <span class="tab-step">03</span> LAUNCH SEQUENCE
+    </button>
+    <button class="nav-tab" data-tab="simulation">
+      <span class="tab-step">04</span> FLIGHT SIMULATION & OPS
+    </button>
+    <button class="nav-tab" data-tab="datalab">
+      <span class="tab-step">05</span> DATA LAB
+    </button>
+    <button class="nav-tab" data-tab="debrief">
+      <span class="tab-step">06</span> MISSION DEBRIEF
+    </button>
+  </nav>
+
+  <!-- MAIN VIEWPORT CONTAINER -->
+  <main class="main-viewport">
+
+    <!-- ==================== VIEW 1: MISSION BRIEFING ==================== -->
+    <section id="view-briefing" class="view-section active">
+      <div class="briefing-container">
+        <div class="briefing-panel-left">
+          <div class="section-badge">PHASE A / FORMULATION</div>
+          <h2>Step 1: Select Target Destination & Environment</h2>
+          <p class="section-lead">Every space mission is dictated by its physical destination. Solar irradiance drops with the inverse-square law, while thermal extremes and ionizing radiation govern spacecraft survival.</p>
+
+          <div class="cards-grid destination-grid">
+            <div class="dest-card" data-dest="earth">
+              <div class="dest-badge">LEO / SSO</div>
+              <h3>Earth Observation</h3>
+              <p>Sun-synchronous orbit mapping global biosphere, carbon plumes, and oceanic heat content.</p>
+              <div class="dest-mini-stats">
+                <span>1.0 AU</span> | <span>1361 W/m²</span> | <span>Van Allen SAA</span>
+              </div>
+            </div>
+
+            <div class="dest-card" data-dest="moon">
+              <div class="dest-badge">LUNAR POLAR</div>
+              <h3>The Moon (Artemis Target)</h3>
+              <p>Polar frozen orbit mapping 27K cryogenic water ice in Shackleton crater PSRs.</p>
+              <div class="dest-mini-stats">
+                <span>1.0 AU</span> | <span>-246°C Cold Trap</span> | <span>Mascons</span>
+              </div>
+            </div>
+
+            <div class="dest-card selected" data-dest="mars">
+              <div class="dest-badge">DEEP SPACE</div>
+              <h3>Mars (Jezero Delta)</h3>
+              <p>Elliptical science orbit exploring ancient river delta clay mineralogy and seasonal dust storms.</p>
+              <div class="dest-mini-stats">
+                <span>1.52 AU</span> | <span>589 W/m²</span> | <span>43% Solar</span>
+              </div>
+            </div>
+
+            <div class="dest-card" data-dest="europa">
+              <div class="dest-badge">OUTER PLANET</div>
+              <h3>Europa (Jovian Ocean)</h3>
+              <p>Flyby science passes probing subsurface salty oceans under 20km ice under brutal Jovian radiation.</p>
+              <div class="dest-mini-stats">
+                <span>5.20 AU</span> | <span>50 W/m² (3.7%)</span> | <span>320 krad/yr</span>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="sub-heading">Step 2: Select Mission Class & Budget Cap</h2>
+          <div class="cards-grid mission-class-grid">
+            <div class="class-card" data-class="cubesat_tech">
+              <h4>SmallSat / Tech Demo</h4>
+              <div class="class-cap">$50M Cap</div>
+              <p>High innovation, strict mass limit, tight power budget.</p>
+            </div>
+            <div class="class-card selected" data-class="discovery">
+              <h4>Discovery Program</h4>
+              <div class="class-cap">$500M Cap</div>
+              <p>Focused planetary science (e.g. Dawn, Kepler, MAVEN).</p>
+            </div>
+            <div class="class-card" data-class="new_frontiers">
+              <h4>New Frontiers</h4>
+              <div class="class-cap">$1,000M Cap</div>
+              <p>High-priority Decadal survey targets (e.g. New Horizons, OSIRIS-REx).</p>
+            </div>
+            <div class="class-card" data-class="flagship">
+              <h4>Flagship Class</h4>
+              <div class="class-cap">$2,500M Cap</div>
+              <p>Multi-instrument transformative mission (e.g. Europa Clipper, Perseverance).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="briefing-panel-right">
+          <div class="environmental-briefing-card">
+            <div class="card-header">
+              <span class="hud-tag">TARGET FLIGHT DOSSIER</span>
+              <h3 id="brief-dest-title">Mars (Jezero Crater & Global Climate)</h3>
+            </div>
+            <p id="brief-dest-desc" class="briefing-desc-text">Mars is a cold desert world with 43% of Earth's solar flux. Dust storms can shroud the entire planet, cutting solar irradiance by up to 85%.</p>
+
+            <div class="environment-metrics-box" id="brief-dest-env">
+              <!-- Dynamically populated -->
+            </div>
+
+            <div class="card-header" style="margin-top: 20px;">
+              <span class="hud-tag">MISSION OBJECTIVES</span>
+            </div>
+            <div class="science-targets-list" id="brief-dest-science">
+              <!-- Dynamically populated -->
+            </div>
+
+            <button id="proceed-to-engineering-btn" class="primary-action-btn pulse-glow">
+              PROCEED TO SPACECRAFT ENGINEERING BAY →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: SPACECRAFT ENGINEERING BAY ==================== -->
+    <section id="view-engineering" class="view-section">
+      <div class="engineering-layout">
+        
+        <!-- LEFT: SUBSYSTEM CONFIGURATOR & PAYLOAD SELECTION -->
+        <div class="eng-configurator-pane">
+          <div class="config-header">
+            <h2>Spacecraft Subsystems Architecting</h2>
+            <p>Select components and balance trade-offs across mass, electrical power, Delta-V, thermal stability, radiation shielding, and fiscal budget.</p>
+          </div>
+
+          <!-- 1. Bus Structure -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">1. Spacecraft Bus Structure</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-bus" value="smallsat">
+                <div class="card-content">
+                  <span class="item-name">SmallSat Bus</span>
+                  <span class="item-meta">65 kg Dry | 45 kg Payload | $18M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-bus" value="discovery_medium" checked>
+                <div class="card-content">
+                  <span class="item-name">Medium Discovery Bus</span>
+                  <span class="item-meta">380 kg Dry | 160 kg Payload | $125M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-bus" value="flagship_heavy">
+                <div class="card-content">
+                  <span class="item-name">Flagship Heavy Bus</span>
+                  <span class="item-meta">1050 kg Dry | 380 kg Payload | $340M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. Power Generation -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">2. Power Generation Subsystem</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-power" value="silicon_pv">
+                <div class="card-content">
+                  <span class="item-name">Silicon Solar Arrays (19%)</span>
+                  <span class="item-meta">600W at 1AU | 25 kg | $12M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-power" value="gaas_ultraflex" checked>
+                <div class="card-content">
+                  <span class="item-name">GaAs UltraFlex Arrays (32%)</span>
+                  <span class="item-meta">1800W at 1AU | 42 kg | $38M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-power" value="mmrtg_nuclear">
+                <div class="card-content">
+                  <span class="item-name">MMRTG Nuclear Pu-238</span>
+                  <span class="item-meta">140W Constant Everywhere | 48 kg | $95M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 3. Battery Energy Storage -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">3. Battery Energy Storage (Eclipse Survival)</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-battery" value="li_ion_small">
+                <div class="card-content">
+                  <span class="item-name">Small Li-Ion (400 Wh)</span>
+                  <span class="item-meta">6 kg | $4M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-battery" value="li_ion_medium" checked>
+                <div class="card-content">
+                  <span class="item-name">Space-Grade Li-Ion (1,200 Wh)</span>
+                  <span class="item-meta">16 kg | $12M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-battery" value="li_ion_large">
+                <div class="card-content">
+                  <span class="item-name">High-Capacity Pack (3,200 Wh)</span>
+                  <span class="item-meta">38 kg | $26M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 4. Propulsion Subsystem -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">4. Propulsion Engine & Isp</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-propulsion" value="monoprop_hydrazine">
+                <div class="card-content">
+                  <span class="item-name">Hydrazine Monoprop (Isp 225s)</span>
+                  <span class="item-meta">Simple & Reliable | 14 kg | $15M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-propulsion" value="biprop_mmh_nto" checked>
+                <div class="card-content">
+                  <span class="item-name">Bipropellant MMH/NTO (Isp 318s)</span>
+                  <span class="item-meta">High Thrust Insertion | 34 kg | $35M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-propulsion" value="electric_xenon_ion">
+                <div class="card-content">
+                  <span class="item-name">NEXT-C Xenon Ion (Isp 3200s)</span>
+                  <span class="item-meta">High Efficiency, 1100W draw | 48 kg | $65M</span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="slider-row">
+              <div class="slider-label-row">
+                <span>Propellant Allocation (Wet Mass Tuning):</span>
+                <strong id="prop-mass-val">420 kg</strong>
+              </div>
+              <input type="range" id="prop-mass-slider" min="20" max="2200" step="20" value="420">
+            </div>
+          </div>
+
+          <!-- 5. Thermal Control -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">5. Thermal Insulation & Heaters</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-thermal" value="passive_mli">
+                <div class="card-content">
+                  <span class="item-name">Passive MLI Blankets</span>
+                  <span class="item-meta">-60°C to +110°C | 8 kg | $5M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-thermal" value="active_heaters_louvers" checked>
+                <div class="card-content">
+                  <span class="item-name">Active Louvers & Heaters</span>
+                  <span class="item-meta">-130°C to +130°C (28W draw) | 22 kg | $16M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-thermal" value="cryo_deep_space_rhu">
+                <div class="card-content">
+                  <span class="item-name">Deep-Space RHUs + Radiators</span>
+                  <span class="item-meta">-250°C to +150°C | 36 kg | $32M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 6. Radiation Vault Shielding -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">6. Radiation Vault Shielding</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-shielding" value="standard_aluminum">
+                <div class="card-content">
+                  <span class="item-name">Standard Aluminum (2.5mm)</span>
+                  <span class="item-meta">Tolerates 25 krad | 10 kg | $4M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-shielding" value="enhanced_vault" checked>
+                <div class="card-content">
+                  <span class="item-name">Enhanced Bay (5mm Al + Kovar)</span>
+                  <span class="item-meta">Tolerates 85 krad | 32 kg | $18M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-shielding" value="tantalum_heavy_vault">
+                <div class="card-content">
+                  <span class="item-name">Heavy Tantalum Vault</span>
+                  <span class="item-meta">Tolerates 350 krad (Jovian) | 95 kg | $45M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 7. Telecommunications & Antenna -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">7. Telecommunications & DSN Antenna</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-telecom" value="low_gain_omni">
+                <div class="card-content">
+                  <span class="item-name">Low-Gain Omni S-Band</span>
+                  <span class="item-meta">Broad beam, low bitrate | 4 kg | $3M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-telecom" value="medium_gain_horn">
+                <div class="card-content">
+                  <span class="item-name">Medium-Gain Horn X-Band</span>
+                  <span class="item-meta">Moderate bitrate | 10 kg | $10M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-telecom" value="high_gain_parabolic" checked>
+                <div class="card-content">
+                  <span class="item-name">2.4m High-Gain Parabolic Dish</span>
+                  <span class="item-meta">High-speed Ka/X band | 28 kg | $28M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-telecom" value="optical_laser_dsoc">
+                <div class="card-content">
+                  <span class="item-name">DSOC Optical Laser (1550 nm)</span>
+                  <span class="item-meta">Gigabit optical link (110W) | 35 kg | $55M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 8. Flight Computer & Avionics -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">8. Flight Computer & Data Storage</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-avionics" value="commercial_rad_tolerant">
+                <div class="card-content">
+                  <span class="item-name">Single Rad-Tolerant (16GB)</span>
+                  <span class="item-meta">Single String | 6 kg | $10M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-avionics" value="dual_redundant_rad750" checked>
+                <div class="card-content">
+                  <span class="item-name">BAE RAD750 Dual Core (128GB)</span>
+                  <span class="item-meta">Mission Architect Standard | 16 kg | $32M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-avionics" value="autonomous_tmr_core">
+                <div class="card-content">
+                  <span class="item-name">TMR Autonomy Core (512GB)</span>
+                  <span class="item-meta">Deep-Space Byzantine Fault Tolerant | 28 kg | $65M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 9. Scientific Instruments Payload -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">9. Scientific Instruments Payload (Check all that apply)</div>
+            <div class="checkbox-card-grid">
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="high_res_camera" checked>
+                <div class="card-content">
+                  <span class="item-name">High-Res Optical Camera (HiRISE/LROC)</span>
+                  <span class="item-meta">28 kg | 42W | 12 Mbps | $45M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="multispectral_imager" checked>
+                <div class="card-content">
+                  <span class="item-name">Multispectral Mineral/Biosphere (CRISM/MODIS)</span>
+                  <span class="item-meta">24 kg | 35W | 5.5 Mbps | $38M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="radar_sounder" checked>
+                <div class="card-content">
+                  <span class="item-name">Ice-Penetrating Radar Sounder (SHARAD/REASON)</span>
+                  <span class="item-meta">38 kg | 85W | 3.5 Mbps | $62M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="laser_altimeter">
+                <div class="card-content">
+                  <span class="item-name">Laser Altimeter & LIDAR (LOLA/ICESat-2)</span>
+                  <span class="item-meta">22 kg | 38W | 1.8 Mbps | $32M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="thermal_spectrometer">
+                <div class="card-content">
+                  <span class="item-name">Thermal Infrared Radiometer (Diviner/TES)</span>
+                  <span class="item-meta">20 kg | 30W | 1.2 Mbps | $28M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="magnetometer">
+                <div class="card-content">
+                  <span class="item-name">Deployable Fluxgate Magnetometer (Europa MAG)</span>
+                  <span class="item-meta">12 kg | 14W | 0.35 Mbps | $22M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="atmosphere_sounder">
+                <div class="card-content">
+                  <span class="item-name">Atmospheric Climate Sounder (OCO-2/AIRS)</span>
+                  <span class="item-meta">30 kg | 52W | 4.0 Mbps | $40M</span>
+                </div>
+              </label>
+
+              <label class="config-checkbox-card">
+                <input type="checkbox" name="eng-instrument" value="mass_spectrometer">
+                <div class="card-content">
+                  <span class="item-name">Neutral Gas & Ion Mass Spectrometer (MASPEX)</span>
+                  <span class="item-meta">26 kg | 68W | 0.9 Mbps | $55M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 10. Launch Vehicle Selection -->
+          <div class="subsystem-group">
+            <div class="subsystem-title">10. Launch Vehicle & C3 Injection Capability</div>
+            <div class="radio-card-grid">
+              <label class="config-radio-card">
+                <input type="radio" name="eng-launchVehicle" value="electron_smallsat">
+                <div class="card-content">
+                  <span class="item-name">Electron Rocket</span>
+                  <span class="item-meta">320 kg to LEO | $12M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-launchVehicle" value="falcon_9" checked>
+                <div class="card-content">
+                  <span class="item-name">Falcon 9 Medium-Heavy</span>
+                  <span class="item-meta">3100 kg to Mars | $68M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-launchVehicle" value="falcon_heavy">
+                <div class="card-content">
+                  <span class="item-name">Falcon Heavy Deep Space</span>
+                  <span class="item-meta">12800 kg to Mars | 3200 kg to Europa | $135M</span>
+                </div>
+              </label>
+              <label class="config-radio-card">
+                <input type="radio" name="eng-launchVehicle" value="sls_block1">
+                <div class="card-content">
+                  <span class="item-name">SLS Block 1 Heavy Lifter Booster (SLS-X)</span>
+                  <span class="item-meta">21000 kg to Mars | 7500 kg to Europa | $850M</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: BLUEPRINT VISUALIZER & LIVE ENGINEERING LEDGER -->
+        <div class="eng-audit-pane">
+          <!-- Spacecraft Blueprint Canvas -->
+          <div class="blueprint-canvas-box">
+            <canvas id="blueprint-canvas" width="600" height="340"></canvas>
+          </div>
+
+          <!-- Systems Engineering Live Ledger -->
+          <div class="engineering-ledger">
+            <div class="ledger-header">
+              <span class="hud-tag">SYSTEMS AUDIT LEDGER</span>
+              <h3>Systems Engineering Margins</h3>
+            </div>
+
+            <div class="ledger-metrics-grid">
+              <!-- Mass -->
+              <div class="ledger-card">
+                <div class="lc-title">Mass Budget</div>
+                <div class="lc-value"><span id="ledger-wet-mass">--</span> Wet</div>
+                <div class="lc-sub">Dry: <span id="ledger-dry-mass">--</span> | Cap: <span id="ledger-launch-limit">--</span></div>
+                <div class="lc-status">Margin: <strong id="ledger-mass-margin">--</strong></div>
+              </div>
+
+              <!-- Power -->
+              <div class="ledger-card">
+                <div class="lc-title">Power Budget</div>
+                <div class="lc-value"><span id="ledger-power-margin">--</span> Margin</div>
+                <div class="lc-sub">Gen: <span id="ledger-power-gen">--</span></div>
+                <div class="lc-status">Peak Draw: <span id="ledger-power-cons">--</span></div>
+                <div class="lc-status">Eclipse: <strong id="ledger-battery-eclipse">--</strong></div>
+              </div>
+
+              <!-- Delta-V -->
+              <div class="ledger-card">
+                <div class="lc-title">Delta-V Budget (Rocket Eq.)</div>
+                <div class="lc-value"><span id="ledger-dv-avail">--</span> Available</div>
+                <div class="lc-sub">Required: <span id="ledger-dv-req">--</span></div>
+                <div class="lc-status">Margin: <strong id="ledger-dv-margin">--</strong></div>
+              </div>
+
+              <!-- Telecom & Data -->
+              <div class="ledger-card">
+                <div class="lc-title">DSN Link & Telecommunications</div>
+                <div class="lc-value"><span id="ledger-downlink-rate">--</span> Rate</div>
+                <div class="lc-sub">Throughput: <span id="ledger-daily-data">--</span></div>
+                <div class="lc-status">Latency: <span id="ledger-comms-delay">--</span></div>
+              </div>
+
+              <!-- Thermal & Radiation -->
+              <div class="ledger-card">
+                <div class="lc-title">Thermal & Radiation Survivability</div>
+                <div class="lc-sub">Thermal Envelope: <strong id="ledger-thermal-status">--</strong></div>
+                <div class="lc-sub">TID Electronics Life: <strong id="ledger-rad-lifetime">--</strong></div>
+              </div>
+
+              <!-- Fiscal Cost -->
+              <div class="ledger-card">
+                <div class="lc-title">Fiscal Mission Cost</div>
+                <div class="lc-value"><span id="ledger-total-cost">--</span></div>
+                <div class="lc-sub">Budget Cap: <span id="ledger-budget-cap">--</span></div>
+                <div class="lc-status">Reserve: <strong id="ledger-cost-margin">--</strong></div>
+              </div>
+            </div>
+
+            <!-- Science Potential -->
+            <div class="ledger-science-summary">
+              <span>Scientific Objectives Met:</span>
+              <strong id="ledger-science-coverage">--</strong>
+            </div>
+
+            <!-- Systems Alerts & Warnings -->
+            <div id="ledger-alerts-container" class="ledger-alerts">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Action Button -->
+            <button id="verify-and-launch-btn" class="primary-action-btn pulse-glow">
+              VERIFY SYSTEMS & PROCEED TO LAUNCH PAD →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: LAUNCH SEQUENCE ==================== -->
+    <section id="view-launch" class="view-section">
+      <div class="launch-stage-container">
+        <div class="launch-hud-box">
+          <div class="section-badge">KENNEDY SPACE CENTER / LC-39A</div>
+          <h2>Launch Sequence & Ascent Injection</h2>
+          
+          <div class="launch-clock" id="launch-countdown">
+            T - 00:10
+          </div>
+
+          <div class="launch-status-box">
+            <span class="status-indicator"></span>
+            <span id="launch-status-text">Terminal propellant conditioning verified. Awaiting auto-sequence.</span>
+          </div>
+
+          <div class="launch-animation-graphic">
+            <canvas id="launch-canvas" width="960" height="540"></canvas>
+            <canvas id="ls-chart" width="960" height="150"></canvas>
+            <div class="launch-controls">
+              <button id="ls-play" type="button">&#9654;</button>
+              <input id="ls-scrub" type="range" min="0" max="1000" value="0">
+              <select id="ls-speed"><option value="1">1x</option><option value="4">4x</option><option value="8" selected>8x</option><option value="16">16x</option></select>
+              <select id="ls-material" title="Launch vehicle structural material">
+                <option value="al_li_2195">Al-Li 2195</option>
+                <option value="composite">Carbon composite</option>
+                <option value="steel_304l">Stainless 304L</option>
+              </select>
+              <select id="ls-wind" title="Weather"><option value="0">Calm</option><option value="25">Breezy</option><option value="55">Jet stream</option></select>
+              <button id="ls-rec" type="button">&#9210; Record video</button>
+            </div>
+            <div id="ls-summary" class="launch-summary"></div>
+          </div>
+
+          <div class="launch-actions-bar">
+            <button id="launch-abort-btn" class="abort-btn">ABORT LAUNCH</button>
+            <button id="enter-flight-btn" class="primary-action-btn pulse-glow" style="display: none;">
+              ENTER MISSION OPERATIONS CONTROL →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: FLIGHT SIMULATION & OPERATIONS ==================== -->
+    <section id="view-simulation" class="view-section">
+      <div class="simulation-dashboard">
+
+        <!-- TOP MISSION CONTROL HUD STRIP -->
+        <div class="sim-telemetry-hud">
+          <div class="hud-item">
+            <span class="hud-label">MISSION TIME</span>
+            <span class="hud-value" id="hud-mission-time">T+ 00d 00h 00m 00s</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">FLIGHT PHASE</span>
+            <span class="hud-value highlight" id="hud-phase">ORBITAL SCIENCE</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">ORBITS COMPLETED</span>
+            <span class="hud-value" id="hud-orbit-count">Orbit #0</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">ALTITUDE</span>
+            <span class="hud-value" id="hud-altitude">320 km</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">ORBITAL VELOCITY</span>
+            <span class="hud-value" id="hud-velocity">3.42 km/s</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">SOLAR REGIME</span>
+            <span id="hud-eclipse-badge" class="badge-sun">☀️ SUNLIT</span>
+          </div>
+        </div>
+
+        <!-- MAIN SIMULATION AREA -->
+        <div class="sim-main-stage">
+          <!-- Left Subsystems Telemetry Column -->
+          <div class="sim-left-pane">
+            <div class="panel-box">
+              <h4>POWER & BATTERY</h4>
+              <div class="meter-row">
+                <span>State of Charge:</span>
+                <span id="hud-battery-pct">100% (1,200 Wh)</span>
+              </div>
+              <div class="meter-bar-track">
+                <div id="hud-battery-bar" class="meter-bar-fill bar-good" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <h4>THERMAL & ENVIRONMENT</h4>
+              <div class="meter-row">
+                <span>Spacecraft Temp:</span>
+                <strong id="hud-temperature">18°C</strong>
+              </div>
+              <div class="meter-row">
+                <span>Ionizing Radiation Dose:</span>
+                <span id="hud-dose">0.00 krad</span>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <h4>SSR SOLID STATE STORAGE</h4>
+              <div class="meter-row">
+                <span>Science Buffer:</span>
+                <span id="hud-ssr-used">0.0 / 128 GB</span>
+              </div>
+              <div class="meter-bar-track">
+                <div id="hud-ssr-bar" class="meter-bar-fill bar-good" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <h4>SCIENCE DOWNLINK SCORE</h4>
+              <div class="meter-row">
+                <span>Points Earned:</span>
+                <strong id="hud-science-points" class="metric-ok">0 PTS</strong>
+              </div>
+              <div class="meter-row">
+                <span>Total Downlinked:</span>
+                <span id="hud-downlink-gb">0.0 GB</span>
+              </div>
+            </div>
+
+            <!-- Interactive Subsystem Switches -->
+            <div class="panel-box">
+              <h4>FLIGHT COMMAND CONTROLS</h4>
+              <div class="subsystem-switch-grid">
+                <button id="btn-safe-mode" class="cmd-btn">🛡️ SAFE MODE: OFF</button>
+                <button id="btn-dsn-tx" class="cmd-btn">📡 DSN TX: STANDBY</button>
+                <button id="btn-trim-burn" class="cmd-btn">🔥 FIRE TRIM BURN</button>
+              </div>
+            </div>
+
+            <!-- Instrument Power Switches -->
+            <div class="panel-box">
+              <h4>ACTIVE PAYLOAD SENSORS</h4>
+              <div id="inst-toggles-container" class="inst-toggles-grid">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Canvas Planetary & Orbit Track Visualizer -->
+          <div class="sim-center-canvas">
+            <canvas id="flight-canvas" width="900" height="600"></canvas>
+            
+            <!-- Time Warp Controls Bar -->
+            <div class="sim-warp-bar">
+              <span class="warp-label">TIME WARP:</span>
+              <button class="warp-btn" data-scale="0">⏸ Pause</button>
+              <button class="warp-btn active" data-scale="1">1x (Real)</button>
+              <button class="warp-btn" data-scale="5">5x</button>
+              <button class="warp-btn" data-scale="25">25x</button>
+              <button class="warp-btn" data-scale="100">100x</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: SCIENCE DATA LAB ==================== -->
+    <section id="view-datalab" class="view-section">
+      <div class="datalab-container">
+        <div class="datalab-header">
+          <div class="section-badge">PLANETARY SCIENCE DIRECTORY</div>
+          <h2>Authentic MISSION ARCHITECT Mission Datasets & Earth Observation</h2>
+          <p>Explore real scientific datasets returned by deep space exploration missions, including LRO laser altimetry, MRO CRISM mineralogy, OCO-2 carbon columns, and Galileo/Europa Clipper magnetic induction.</p>
+        </div>
+
+        <div id="datalab-content" class="datalab-content-box">
+          <!-- Dynamically populated based on active destination -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 6: POST-MISSION DEBRIEF ==================== -->
+    <section id="view-debrief" class="view-section">
+      <div class="debrief-container">
+        <div class="debrief-header">
+          <div class="section-badge">SYSTEMS ENGINEERING DEBRIEF</div>
+          <h2>Mission Evaluation & Systems Trade-off Scorecard</h2>
+        </div>
+
+        <div class="debrief-card">
+          <div class="scorecard-top-row">
+            <div class="scorecard-grade-badge">
+              <span class="grade-label">OVERALL MISSION GRADE</span>
+              <div id="debrief-grade" class="grade-big">A+</div>
+            </div>
+
+            <div class="scorecard-stats-grid">
+              <div class="sc-stat">
+                <span class="sc-label">Science Return Score:</span>
+                <strong id="debrief-science-score">--</strong>
+              </div>
+              <div class="sc-stat">
+                <span class="sc-label">Engineering Margin Health:</span>
+                <strong id="debrief-eng-score">--</strong>
+              </div>
+              <div class="sc-stat">
+                <span class="sc-label">Fiscal Compliance:</span>
+                <strong id="debrief-cost-score">--</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="debrief-section-block">
+            <h3>Systems Engineering Trade-Off Analysis</h3>
+            <div id="debrief-systems-analysis">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="debrief-section-block">
+            <h3>Historical Mission Architect Mission Analog</h3>
+            <div id="debrief-stark-analog">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <div class="debrief-action-bar">
+            <button id="btn-restart-mission" class="primary-action-btn">
+              START NEW MISSION ARCHITECTURE ↺
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- DYNAMIC IN-FLIGHT EVENT / ANOMALY MODAL -->
+  <div id="event-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-badge alert-danger">⚠️ MISSION CONTROL ANOMALY</div>
+      <h3 id="event-title">Coronal Mass Ejection Incoming</h3>
+      <p id="event-desc">Space weather sensors detect a massive solar proton event. Sensitive detector focal planes are vulnerable.</p>
+      
+      <div class="event-options-title">Select Engineering Response:</div>
+      <div id="event-options-container" class="event-options-list">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT INCLUDES -->
+  <footer class="site-foot">Educational simulator. Figures come from public NASA and industry sources and are approximate. Not affiliated with or endorsed by NASA. <button type="button" id="foot-src">Sources &amp; credits</button></footer>
+  <script src="js/guard.js"></script>
+  <script src="js/mission-data.js"></script>
+  <script src="js/systems-engine.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/launch-sim.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ui-fx.js"></script>
+  <script src="js/sources.js"></script>
+  <script src="js/mission-math.js"></script>
+  <script src="js/extras.js"></script>
+  <script src="js/extras2.js"></script>
+  <script src="js/autodebug.js"></script>
+  <script src="js/ai-core.js"></script>
+  <script src="js/assistant.js"></script>
+  <script src="js/flow.js"></script>
+</body>
+</html>
