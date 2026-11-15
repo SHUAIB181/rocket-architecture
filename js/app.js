@@ -74,9 +74,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- NAVIGATION TAB SWITCHER ---
+  const workflowNames = {
+    briefing: 'MISSION BRIEFING',
+    engineering: 'SPACECRAFT ENGINEERING BAY',
+    launch: 'LAUNCH SEQUENCE',
+    simulation: 'FLIGHT SIMULATION & OPS',
+    datalab: 'DATA LAB',
+    debrief: 'MISSION DEBRIEF'
+  };
+  function updateWorkflowProgress(tabId) {
+    const activeIndex = Array.from(navTabs).findIndex(tab => tab.dataset.tab === tabId);
+    if (activeIndex < 0) return;
+
+    const phaseNumber = String(activeIndex + 1).padStart(2, '0');
+    const progressFill = document.getElementById('mission-progress-fill');
+    const progressTrack = document.querySelector('.mission-progress-track');
+    const phaseLabel = document.getElementById('mission-phase-label');
+    const phaseCount = document.querySelector('.mission-progress-count');
+    const percent = (activeIndex + 1) / navTabs.length * 100;
+
+    if (progressFill) progressFill.style.width = `${percent}%`;
+    if (progressTrack) progressTrack.setAttribute('aria-valuenow', String(activeIndex + 1));
+    if (phaseLabel) phaseLabel.textContent = `PHASE ${phaseNumber} / ${String(navTabs.length).padStart(2, '0')} — ${workflowNames[tabId]}`;
+    if (phaseCount) phaseCount.innerHTML = `${phaseNumber} <span>/ ${String(navTabs.length).padStart(2, '0')}</span>`;
+  }
+
   function switchTab(tabId) {
     navTabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
     viewSections.forEach(s => s.classList.toggle('active', s.id === `view-${tabId}`));
+    updateWorkflowProgress(tabId);
 
     if (tabId === 'engineering') {
       updateEngineeringView();
@@ -86,6 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderDataLab();
     }
   }
+
+  const initialTab = document.querySelector('.nav-tab.active');
+  updateWorkflowProgress(initialTab ? initialTab.dataset.tab : 'briefing');
 
   navTabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -466,7 +495,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const launchAbortBtn = document.getElementById('launch-abort-btn');
   const enterFlightBtn = document.getElementById('enter-flight-btn');
   let countdownTimerId = null;
-  window.__mission = { getReport: () => latestReport, getDesign: () => currentDesign, engine: systemsEngine, data: missionData, switchTab, apply: (d) => { Object.assign(currentDesign, d); updateEngineeringView(); } };
+  window.__mission = {
+    getReport: () => latestReport,
+    getDesign: () => currentDesign,
+    engine: systemsEngine,
+    data: missionData,
+    switchTab,
+    apply: (d) => {
+      Object.assign(currentDesign, d);
+      updateBriefingUI();
+      updateEngineeringView();
+    }
+  };
   const launchPlayer = new window.LaunchPlayer(document.getElementById('launch-canvas'), {
     onEvent: (e) => { if (launchStatusText) launchStatusText.textContent = e.text; audio.playChime(); },
     onEnd: (s) => {

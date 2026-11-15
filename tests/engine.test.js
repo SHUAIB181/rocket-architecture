@@ -19,6 +19,12 @@ test('Falcon 9 reaches orbit with a light payload; mass never increases', () => 
   const r = simulateAscent('falcon_9', 3000, 'al_li_2195', 200, 0); assert.ok(r.summary.success);
   for (let i = 1; i < r.frames.length; i++) assert.ok(r.frames[i].m <= r.frames[i - 1].m + 1e-6);
 });
+test('no-liftoff simulations still return a playable initial state', () => {
+  const r = simulateAscent('electron_smallsat', 300000, 'al_li_2195', 200, 0);
+  assert.strictEqual(r.summary.success, false);
+  assert.strictEqual(r.summary.outcome, 'NO LIFTOFF - T/W too low');
+  assert.strictEqual(r.frames.length, 1);
+});
 test('boosters separate on Falcon Heavy and SLS', () => { for (const v of ['falcon_heavy', 'sls_block1']) assert.ok(simulateAscent(v, 20000, 'al_li_2195', 200, 0).events.some(e => e.key === 'boostersep')); });
 test('jet-stream wind and lighter structure behave sensibly', () => {
   assert.ok(simulateAscent('falcon_9', 3000, 'al_li_2195', 200, 55).summary.success);
@@ -30,6 +36,23 @@ test('auto-debug fixes a broken design and leaves a good one alone', () => {
 });
 test('travel budgets are close to published values', () => {
   const m = MM.transferBudget('Mars'); assert.ok(m.dep > 3.4 && m.dep < 3.9 && m.arr > 1.8 && m.arr < 2.4 && m.days > 240 && m.days < 270);
+});
+test('staged rocket sizing accounts for payload, staging, burn time and thrust-to-weight', () => {
+  const stages = [
+    { dryMassKg: 100, propellantMassKg: 900, ispSeconds: 300, thrustKN: 100 },
+    { dryMassKg: 40, propellantMassKg: 160, ispSeconds: 340, thrustKN: 20 }
+  ];
+  const result = MM.stagedRocketBudget(stages, 1000);
+  assert.strictEqual(result.wetMassKg, 2200);
+  assert.strictEqual(result.stageResults.length, 2);
+  assert.ok(result.stageResults[0].ignitionMassKg > result.stageResults[1].ignitionMassKg);
+  assert.ok(result.stageResults.every(s => s.deltaVMS > 0 && s.burnTimeS > 0 && s.thrustToWeight > 0));
+  assert.strictEqual(result.totalDeltaVMS, result.stageResults.reduce((sum, stage) => sum + stage.deltaVMS, 0));
+});
+test('staged rocket sizing rejects impossible or malformed inputs', () => {
+  assert.throws(() => MM.stagedRocketBudget([], 1000), RangeError);
+  assert.throws(() => MM.stagedRocketBudget([{ dryMassKg: 100, propellantMassKg: 0, ispSeconds: 300, thrustKN: 10 }], 1000), RangeError);
+  assert.throws(() => MM.stagedRocketBudget([{ dryMassKg: 100, propellantMassKg: 100, ispSeconds: 300, thrustKN: 10 }], 0), RangeError);
 });
 test('monte carlo: more margin means higher success chance; alerts mean zero', () => {
   const mk = (dv, alerts) => ({ alerts: alerts ? [{}] : [], deltaV: { marginPct: dv }, power: { sunlightMarginPct: 30 }, mass: { launchMassMarginPct: 20 } });

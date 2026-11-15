@@ -10,6 +10,7 @@
   <meta property="og:description" content="Design a spacecraft, explore planetary missions, and simulate a launch.">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/flow.css">
+  <link rel="stylesheet" href="css/mission-design.css">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <meta name="theme-color" content="#08090b">
@@ -89,25 +90,37 @@
   </header>
 
   <!-- NAVIGATION TABS -->
-  <nav class="mission-nav">
-    <button class="nav-tab active" data-tab="briefing">
-      <span class="tab-step">01</span> MISSION BRIEFING
-    </button>
-    <button class="nav-tab" data-tab="engineering">
-      <span class="tab-step">02</span> SPACECRAFT ENGINEERING BAY
-    </button>
-    <button class="nav-tab" data-tab="launch">
-      <span class="tab-step">03</span> LAUNCH SEQUENCE
-    </button>
-    <button class="nav-tab" data-tab="simulation">
-      <span class="tab-step">04</span> FLIGHT SIMULATION & OPS
-    </button>
-    <button class="nav-tab" data-tab="datalab">
-      <span class="tab-step">05</span> DATA LAB
-    </button>
-    <button class="nav-tab" data-tab="debrief">
-      <span class="tab-step">06</span> MISSION DEBRIEF
-    </button>
+  <nav class="mission-nav" aria-label="Mission workflow">
+    <div class="mission-progress-summary">
+      <div class="mission-progress-label">
+        <span>MISSION WORKFLOW</span>
+        <strong id="mission-phase-label">PHASE 01 / 06 — MISSION BRIEFING</strong>
+      </div>
+      <div class="mission-progress-track" role="progressbar" aria-label="Mission workflow progress" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1">
+        <span id="mission-progress-fill"></span>
+      </div>
+      <span class="mission-progress-count">01 <span>/ 06</span></span>
+    </div>
+    <div class="mission-nav-tabs" role="tablist" aria-label="Mission phases">
+      <button class="nav-tab active" data-tab="briefing">
+        <span class="tab-step">01</span> MISSION BRIEFING
+      </button>
+      <button class="nav-tab" data-tab="engineering">
+        <span class="tab-step">02</span> SPACECRAFT ENGINEERING BAY
+      </button>
+      <button class="nav-tab" data-tab="launch">
+        <span class="tab-step">03</span> LAUNCH SEQUENCE
+      </button>
+      <button class="nav-tab" data-tab="simulation">
+        <span class="tab-step">04</span> FLIGHT SIMULATION & OPS
+      </button>
+      <button class="nav-tab" data-tab="datalab">
+        <span class="tab-step">05</span> DATA LAB
+      </button>
+      <button class="nav-tab" data-tab="debrief">
+        <span class="tab-step">06</span> MISSION DEBRIEF
+      </button>
+    </div>
   </nav>
 
   <!-- MAIN VIEWPORT CONTAINER -->
@@ -121,7 +134,7 @@
           <h2>Step 1: Select Target Destination & Environment</h2>
           <p class="section-lead">Every space mission is dictated by its physical destination. Solar irradiance drops with the inverse-square law, while thermal extremes and ionizing radiation govern spacecraft survival.</p>
 
-          <div class="cards-grid destination-grid">
+          <div id="destination-grid" class="cards-grid destination-grid">
             <div class="dest-card" data-dest="earth">
               <div class="dest-badge">LEO / SSO</div>
               <h3>Earth Observation</h3>
@@ -672,6 +685,8 @@
           <div class="launch-animation-graphic">
             <canvas id="launch-canvas" width="960" height="540"></canvas>
             <canvas id="ls-chart" width="960" height="150"></canvas>
+            <div class="ls-trajectory-heading"><strong>ASCENT PROFILE</strong><span>Altitude vs. downrange · current flight marker shown</span></div>
+            <canvas id="ls-trajectory" width="960" height="220" role="img" aria-label="Rocket altitude versus downrange trajectory profile"></canvas>
             <div class="launch-controls">
               <button id="ls-play" type="button">&#9654;</button>
               <input id="ls-scrub" type="range" min="0" max="1000" value="0">
@@ -685,6 +700,7 @@
               <button id="ls-rec" type="button">&#9210; Record video</button>
             </div>
             <div id="ls-summary" class="launch-summary"></div>
+            <p class="launch-model-note">Educational 2D point-mass model. Vehicle performance and downrange are approximate; this is not flight-qualified guidance.</p>
           </div>
 
           <div class="launch-actions-bar">

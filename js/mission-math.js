@@ -30,6 +30,38 @@
     }
     return { p: ok / n, trials: n, reasons };
   }
-  const API = { transferBudget, monteCarlo, rng };
+  function stagedRocketBudget(stages, payloadKg) {
+    const g0 = 9.80665;
+    if (!Array.isArray(stages) || stages.length < 1 || stages.length > 6) throw new RangeError('A rocket must have between 1 and 6 stages.');
+    if (!Number.isFinite(payloadKg) || payloadKg < 0.1 || payloadKg > 1e9) throw new RangeError('Payload mass must be between 0.1 kg and 1,000,000,000 kg.');
+    stages.forEach((stage, i) => {
+      if (!stage || !Number.isFinite(stage.dryMassKg) || stage.dryMassKg < 0.1 || stage.dryMassKg > 1e9 ||
+          !Number.isFinite(stage.propellantMassKg) || stage.propellantMassKg < 0.1 || stage.propellantMassKg > 1e9 ||
+          !Number.isFinite(stage.ispSeconds) || stage.ispSeconds < 50 || stage.ispSeconds > 1000 ||
+          !Number.isFinite(stage.thrustKN) || stage.thrustKN < 0.1 || stage.thrustKN > 1e9) {
+        throw new RangeError('Stage ' + (i + 1) + ' needs masses and thrust from 0.1 to 1,000,000,000, plus an Isp from 50 to 1000 seconds.');
+      }
+    });
+
+    const wetMassKg = payloadKg + stages.reduce((sum, stage) => sum + stage.dryMassKg + stage.propellantMassKg, 0);
+    let totalDeltaVMS = 0;
+    const stageResults = stages.map((stage, i) => {
+      const upperStackMassKg = stages.slice(i).reduce((sum, item) => sum + item.dryMassKg + item.propellantMassKg, payloadKg);
+      const burnoutMassKg = upperStackMassKg - stage.propellantMassKg;
+      const deltaVMS = stage.ispSeconds * g0 * Math.log(upperStackMassKg / burnoutMassKg);
+      const massFlowKgS = stage.thrustKN * 1000 / (stage.ispSeconds * g0);
+      totalDeltaVMS += deltaVMS;
+      return {
+        stage: i + 1,
+        ignitionMassKg: upperStackMassKg,
+        burnoutMassKg,
+        deltaVMS,
+        burnTimeS: stage.propellantMassKg / massFlowKgS,
+        thrustToWeight: stage.thrustKN * 1000 / (upperStackMassKg * g0)
+      };
+    });
+    return { payloadKg, wetMassKg, totalDeltaVMS, stageResults };
+  }
+  const API = { transferBudget, monteCarlo, rng, stagedRocketBudget };
   if (typeof window !== 'undefined') window.MissionMath = API; if (typeof module !== 'undefined') module.exports = API;
 })();

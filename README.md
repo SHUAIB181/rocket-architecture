@@ -24,7 +24,9 @@ Values are embedded (not fetched live). Public NASA references used:
 Limits: launch vehicle masses/thrust are approximate public figures; structural-material mass factors are estimates; steering is simplified, so heavy payloads can fail where real rockets succeed. Please verify values before presenting them as NASA data. This project is not affiliated with or endorsed by NASA.
 
 ## New features
-Toolbox (bottom-right): NASA live data (APOD, near-Earth objects, Perseverance photos), compare with a real mission, transfer-window planner, guided hints and challenges, 3D rocket view, shareable design link. Launch screen: live charts and a weather (wind) selector.
+Toolbox (bottom-right) opens to a live mission snapshot with engineering margins, top constraints and next actions. Tools are grouped into mission, design, analysis, learning, and data/reporting categories. The Rocket Lab estimates ideal staged-rocket delta-v, burn time, and thrust-to-weight for editable stages; it can start from a catalog launcher. Launch playback includes an altitude-versus-downrange profile and event markers. Compare includes a launch-vehicle trade study for the current spacecraft, and printable reports include an ideal rocket-stack estimate.
+
+NASA live data (APOD, near-Earth objects, Perseverance photos) is requested only when NASA LIVE is selected. Successful responses are cached in this browser for six hours and stale cached data is shown if NASA rate-limits a refresh. After a 429 response, further requests pause for an hour (or longer if NASA specifies) instead of repeatedly hitting the shared demo-key limit. A free personal NASA API key can be entered in that tool; it is stored only in the browser.
 
 ## Deploy free on GitHub Pages
 1. Create a GitHub repository and push this project with its files at the repository root.
@@ -33,8 +35,8 @@ Toolbox (bottom-right): NASA live data (APOD, near-Earth objects, Perseverance p
 
 See DEMO_SCRIPT.md for the video outline.
 
-## AI Coach (optional)
-The AI Coach opens automatically and checks whether the Gemini server is configured; it waits for the visitor to ask a question before sending anything. The built-in coach works offline for common questions and design troubleshooting. For full Gemini responses, use the Node server:
+## Mission Intelligence
+The Mission Intelligence panel opens automatically and checks whether the Gemini server is configured; it waits for the visitor to ask a question before sending anything. Its status distinguishes a ready Gemini server, a missing key, and an unavailable Node API. It can plan a mission, review the live spacecraft design and margins, explain engineering concepts, and recommend catalog-valid changes. Suggested changes are never applied until the visitor chooses **Apply**. The built-in assistant can review designs, explain common concepts and troubleshoot offline. For broader Gemini guidance, use the Node server:
 
 1. Install Node.js 18 or newer, then run `npm install` in this project folder.
 2. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` to a key from Google AI Studio.
@@ -51,8 +53,9 @@ The key stays on the server and is not sent to the browser. GitHub Pages serves 
 The site owner pays for Gemini usage. Set an appropriate usage limit in Google AI Studio before sharing publicly; the app's per-IP rate limit is not a total spending cap. Render's free service may also take a short time to wake after inactivity.
 
 ## Flow design and Blender animation
-- `css/flow.css` + `js/flow.js`: drifting starfield, glowing mission-progress line, staggered reveals, cursor glow, animated hero rocket.
-- Optional Blender render: install Blender, run `blender -b -P blender/rocket_flow.py`. It writes `assets/rocket_flow.mp4` (hero video, picked up automatically) and `assets/rocket.glb` (3D model). Delete the mp4 to return to the SVG hero.
+- `css/flow.css` + `js/flow.js`: reduced-motion-aware starfield, mission hero, and subtle screen transitions.
+- The hero uses a locally cached Curiosity panorama from NASA's Mars Exploration Program image archive (PIA20840; NASA/JPL-Caltech/MSSS), so it remains available offline after the app shell is cached.
+- Optional Blender render: install Blender and run `blender -b -P blender/rocket_flow.py`. It writes `assets/rocket_flow.mp4` and `assets/rocket.glb` (3D model). To use the video in the hero, add `<meta name="mission-hero-video" content="assets/rocket_flow.mp4">` to the document head; the NASA image remains the default and video fallback.
 
 ## Gemini integration
-The Coach sends JSON requests to the same-origin `/api/chat` endpoint. When the Node server has `GEMINI_API_KEY`, it uses Gemini; otherwise the built-in offline coach answers supported questions and can suggest design fixes. Do not put an API key in browser code or commit it to the repository.
+Mission Intelligence sends the current design, engineering results, valid part catalog and recent conversation to the same-origin `/api/chat` endpoint. When the Node server has `GEMINI_API_KEY`, it uses Gemini; otherwise the built-in offline assistant answers supported questions and can suggest design fixes. Do not put an API key in browser code or commit it to the repository.

@@ -1442,11 +1442,15 @@ input[type="range"] {
 /* --- Launch ascent video player --- */
 .launch-animation-graphic { width: 100%; }
 #launch-canvas { width: 100%; max-width: 960px; aspect-ratio: 16 / 9; display: block; margin: 12px auto 0; border: 1px solid var(--border-dim); border-radius: 8px; background: #050811; }
+.ls-trajectory-heading { max-width: 960px; margin: 16px auto 4px; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; color: var(--text-main); font-size: .75rem; letter-spacing: .08em; }
+.ls-trajectory-heading span, .launch-model-note { color: var(--text-muted); font-size: .72rem; letter-spacing: 0; }
+#ls-trajectory { width: 100%; max-width: 960px; height: auto; aspect-ratio: 24 / 5.5; display: block; margin: 0 auto 8px; background: #0b1018; }
 .launch-controls { display: flex; gap: 8px; align-items: center; max-width: 960px; margin: 8px auto; }
 .launch-controls input[type=range] { flex: 1; accent-color: var(--cyan-accent); }
 .launch-controls button, .launch-controls select { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-dim); border-radius: 6px; padding: 6px 10px; font-family: var(--font-hud); cursor: pointer; }
 .launch-controls button:hover { border-color: var(--border-bright); }
 .launch-summary { max-width: 960px; margin: 0 auto 8px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); }
+.launch-model-note { max-width: 960px; margin: 0 auto 12px; }
 /* MINIMAL THEME - flat, dark, hairline borders, single accent. Load AFTER styles.css */
 :root {
   --bg-deep-space: #08090b; --bg-panel: #0e1013; --bg-card: #0e1013;

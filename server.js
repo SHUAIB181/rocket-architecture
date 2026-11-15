@@ -1,4 +1,3 @@
-console.log(__dirname);
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -88,8 +87,8 @@ async function chat(req, res) {
     try {
       const body = JSON.parse(raw);
 
-      const msgs = (body.messages || [])
-        .slice(-4)
+      const msgs = (Array.isArray(body.messages) ? body.messages : [])
+        .slice(-8)
         .filter(
           (m) =>
             (m.role === "user" ||
@@ -103,16 +102,25 @@ async function chat(req, res) {
         });
       }
 
-     const context = JSON.stringify(
-  body.context?.status || {},
-  null,
-  2
-);
+      const suppliedContext = body.context && typeof body.context === "object"
+        ? body.context
+        : {};
+      const context = JSON.stringify({
+        design: suppliedContext.design || {},
+        status: suppliedContext.status || {},
+        catalog: suppliedContext.catalog || {}
+      }, null, 2);
+
+      if (context.length > 24000) {
+        return send(res, 413, {
+          error: "context_too_large"
+        });
+      }
 
       const prompt = `
 ${SYSTEM}
 
-CURRENT STATE:
+CURRENT STATE AND VALID CATALOG (JSON):
 ${context}
 
 CONVERSATION:
@@ -130,46 +138,33 @@ ASSISTANT:
         process.env.GEMINI_API_KEY
       );
 
-      const model =
-  genAI.getGenerativeModel({
-    model: "gemini-3.5-flash-lite"
-  });
+      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
       let result;
+      for (let i = 0; i < 3; i++) {
+        try {
+          result = await model.generateContent(prompt);
+          break;
+        } catch (err) {
+          const retryable = [500, 502, 503, 504].includes(Number(err.status)) ||
+            ["ECONNRESET", "ETIMEDOUT", "ECONNREFUSED"].includes(err.code);
+          if (!retryable || i === 2) throw err;
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      }
 
-for (let i = 0; i < 3; i++) {
-  try {
-    result = await model.generateContent(prompt);
-    break;
-  } catch (err) {
-    console.log("Gemini busy, retrying...");
-
-    if (i === 2) {
-      throw err;
-    }
-
-    await new Promise(resolve =>
-      setTimeout(resolve, 3000)
-    );
-  }
-}
-
-const text = await result.response.text();
+      const text = await result.response.text();
 
       send(res, 200, {
         role: "assistant",
         content: text
       });
 
-    }catch (err) {
-  console.error("FULL ERROR:");
-  console.error(err);
-
-  send(res, 500, {
-    error: "server_error",
-    detail: err.message,
-    stack: String(err)
-  });
-}
+    } catch (err) {
+      console.error("Gemini request failed:", err);
+      send(res, Number(err.status) === 429 ? 429 : 502, {
+        error: Number(err.status) === 429 ? "rate_limited" : "gemini_request_failed"
+      });
+    }
   });
 }
 

@@ -146,9 +146,12 @@ function simulateAscent(vehicleId, payloadKg, materialId, targetAltKm, windMs) {
     }
     if (seco && t > frames[frames.length - 1].t + 0 && events.find(e => e.key === 'seco') && t - events.find(e => e.key === 'seco').t > 12) { outcome = 'ORBIT'; }
   }
+  if (!frames.length) {
+    frames.push({ t: 0, alt: 0, vr: 0, vt, vrel: 0, mach: 0, q: 0, heat: 0, g: 0, th, m: stackMass(), si, eps, T: 0, pr: 1, burning: false, fairingOn, sepAt, boostOn: bo.on, down: 0 });
+  }
   // derive max-Q event time
   let qi = 0; frames.forEach((f, i) => { if (f.q > frames[qi].q) qi = i; });
-  if (frames.length) events.push({ t: frames[qi].t, key: 'maxq', text: 'Max-Q ' + (frames[qi].q / 1000).toFixed(1) + ' kPa at ' + (frames[qi].alt / 1000).toFixed(1) + ' km' });
+  if (frames.length && outcome !== 'NO_LIFTOFF') events.push({ t: frames[qi].t, key: 'maxq', text: 'Max-Q ' + (frames[qi].q / 1000).toFixed(1) + ' kPa at ' + (frames[qi].alt / 1000).toFixed(1) + ' km' });
   events.sort((a, b) => a.t - b.t);
   const last = frames[frames.length - 1] || { alt: 0, vr: 0, vt: 0 };
   const rr = N.R + last.alt, v2 = last.vr * last.vr + last.vt * last.vt;
@@ -178,8 +181,9 @@ class LaunchPlayer {
     this.ui.rec.onclick = () => this.record();
     if (this.ui.wind) this.ui.wind.onchange = () => { if (this.report) this.load(this.report, true); };
     this.chart = document.getElementById('ls-chart');
+    this.trajectoryChart = document.getElementById('ls-trajectory');
   }
-  dur() { return this.data ? this.data.frames[this.data.frames.length - 1].t : 1; }
+  dur() { return this.data && this.data.frames.length ? Math.max(1, this.data.frames[this.data.frames.length - 1].t) : 1; }
   eventIndexAt(t) { let i = -1; this.data.events.forEach((e, k) => { if (e.t <= t) i = k; }); return i; }
   load(report, autoplay) {
     this.report = report;
@@ -219,7 +223,10 @@ class LaunchPlayer {
   }
   draw() {
     const d = this.data; if (!d) return;
-    const ctx = this.ctx, W = this.c.width, H = this.c.height, f = this.frameAt(this.t), alt = f.alt, k = Math.min(1, alt / 90000);
+    const rect = this.c.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ctx = this.ctx, W = rect.width, H = rect.height, f = this.frameAt(this.t), alt = f.alt, k = Math.min(1, alt / 90000);
+    ctx.setTransform(this.c.width / W, 0, 0, this.c.height / H, 0, 0);
     this.ui.scrub.value = Math.round(this.t / this.dur() * 1000);
     const lerp = (a, b) => a.map((x, i) => Math.round(x + (b[i] - x) * k));
     const top = lerp([30, 50, 90], [0, 0, 0]), bot = lerp([120, 150, 190], [6, 9, 15]);
@@ -241,12 +248,15 @@ class LaunchPlayer {
     ctx.restore();
     // separated stage
     d.events.filter(e => (e.key === 'sep' || e.key === 'boostersep') && this.t > e.t).slice(-1).forEach(e => { const dt = this.t - e.t; if (dt < 20) { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - dt / 20); ctx.translate(W / 2 - dt * 6, H * 0.5 + 70 + dt * dt * 3); ctx.rotate(0.2 * dt); ctx.fillStyle = '#cbd5e1'; ctx.fillRect(-8, -40, 16, 80); ctx.restore(); } });
-    this.drawHUD(ctx, W, H, f, d); this.drawChart();
+    this.drawHUD(ctx, W, H, f, d); this.drawChart(); this.drawTrajectory();
     const ei = this.eventIndexAt(this.t);
     if (ei !== this.lastEv) { this.lastEv = ei; if (ei >= 0 && this.cb.onEvent) this.cb.onEvent(d.events[ei]); }
   }
   drawChart() {
-    const c = this.chart; if (!c || !this.data) return; const x = c.getContext('2d'), W = c.width, H = c.height, fr = this.data.frames, T = this.dur();
+    const c = this.chart; if (!c || !this.data) return;
+    const rect = c.getBoundingClientRect(); if (!rect.width || !rect.height) return;
+    const x = c.getContext('2d'), W = rect.width, H = rect.height, fr = this.data.frames, T = this.dur();
+    x.setTransform(c.width / W, 0, 0, c.height / H, 0, 0);
     x.fillStyle = '#0e1013'; x.fillRect(0, 0, W, H);
     const S = [['ALTITUDE km', p => p.alt / 1000, '#4aa3ff'], ['SPEED km/s', p => Math.hypot(p.vr, p.vt) / 1000, '#3ecf8e'], ['G-FORCE', p => p.g, '#e5a93c']], pw = (W - 40) / 3;
     S.forEach((s, i) => {
@@ -256,6 +266,59 @@ class LaunchPlayer {
         for (let k = 0; k < fr.length; k += 5) { if (pass && fr[k].t > this.t) break; const X = x0 + fr[k].t / T * w, Y = H - 12 - s[1](fr[k]) / mx * (H - 38); st ? x.lineTo(X, Y) : x.moveTo(X, Y); st = true; } x.stroke(); }
       x.fillStyle = 'rgba(255,255,255,0.35)'; x.fillRect(x0 + this.t / T * w, 22, 1, H - 34);
     });
+  }
+  drawTrajectory() {
+    const c = this.trajectoryChart;
+    if (!c || !this.data) return;
+    const rect = c.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ctx = c.getContext('2d'), W = rect.width, H = rect.height;
+    ctx.setTransform(c.width / W, 0, 0, c.height / H, 0, 0);
+    ctx.fillStyle = '#0b1018'; ctx.fillRect(0, 0, W, H);
+    const pad = { left: 58, right: 18, top: 18, bottom: 30 };
+    const pw = Math.max(1, W - pad.left - pad.right), ph = Math.max(1, H - pad.top - pad.bottom);
+    const frames = this.data.frames, maxDown = Math.max(1, ...frames.map(f => f.down / 1000));
+    const maxAlt = Math.max(1, ...frames.map(f => f.alt / 1000));
+    const xAt = f => pad.left + f.down / 1000 / maxDown * pw;
+    const yAt = f => pad.top + ph - f.alt / 1000 / maxAlt * ph;
+
+    ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + ph * i / 4, value = maxAlt * (1 - i / 4);
+      ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+      ctx.fillStyle = '#8995a5'; ctx.fillText(value.toFixed(0), pad.left - 8, y);
+    }
+    for (let i = 0; i <= 4; i++) {
+      const x = pad.left + pw * i / 4, value = maxDown * i / 4;
+      ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + ph); ctx.stroke();
+      ctx.fillStyle = '#8995a5'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(value.toFixed(0), x, pad.top + ph + 5);
+    }
+    ctx.fillStyle = '#aeb9c8'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('ALTITUDE km', 8, 4);
+    ctx.textAlign = 'right'; ctx.fillText('DOWNRANGE km', W - 8, H - 13);
+
+    ctx.beginPath();
+    frames.forEach((frame, i) => i ? ctx.lineTo(xAt(frame), yAt(frame)) : ctx.moveTo(xAt(frame), yAt(frame)));
+    ctx.strokeStyle = '#354357'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath();
+    let started = false;
+    frames.forEach(frame => {
+      if (frame.t > this.t) return;
+      if (!started) { ctx.moveTo(xAt(frame), yAt(frame)); started = true; }
+      else ctx.lineTo(xAt(frame), yAt(frame));
+    });
+    const current = this.frameAt(this.t);
+    if (started) ctx.lineTo(xAt(current), yAt(current));
+    ctx.strokeStyle = '#64b5ff'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    this.data.events.filter(e => e.key === 'sep' || e.key === 'boostersep').forEach(event => {
+      if (event.t > this.dur()) return;
+      const frame = this.frameAt(event.t), x = xAt(frame);
+      ctx.strokeStyle = 'rgba(229,169,60,.75)'; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + ph); ctx.stroke(); ctx.setLineDash([]);
+    });
+    ctx.beginPath(); ctx.arc(xAt(current), yAt(current), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f2f6fc'; ctx.fill(); ctx.strokeStyle = '#64b5ff'; ctx.lineWidth = 2; ctx.stroke();
   }
   drawRocket(ctx, f, veh) {
     const h = 150, w = Math.max(12, Math.min(40, veh.diamM / veh.lenM * h * 1.6)), upper = f.si >= 1;

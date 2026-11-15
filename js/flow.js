@@ -1,4 +1,4 @@
-/** FLOW: starfield, mission progress line, staggered reveals, hero (Blender video with animated SVG fallback). */
+/** FLOW: starfield, mission progress, staggered reveals, and mission hero. */
 (function () {
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // 1. parallax starfield that drifts with scroll/mouse
@@ -20,15 +20,33 @@
   reveal(document.querySelector('.view-section.active'));
   // 4. glow follows the pointer on buttons
   document.addEventListener('pointermove', e => { const b = e.target.closest && e.target.closest('button'); if (b) { const r = b.getBoundingClientRect(); b.style.setProperty('--mx', e.clientX - r.left + 'px'); b.style.setProperty('--my', e.clientY - r.top + 'px'); } });
-  // 5. hero: Blender render if present, otherwise animated SVG rocket
+  // 5. mission hero with a locally cached NASA image and optional Blender render
   const brief = document.getElementById('view-briefing'); if (!brief) return;
   const hero = document.createElement('div'); hero.className = 'flow-hero';
-  hero.innerHTML = '<div class="fh-text"><b>Design. Launch. Explore.</b><span>Build a spacecraft from real engineering trade-offs and fly it to the Moon, Mars or Europa.</span></div>' +
-    '<svg viewBox="0 0 120 300" aria-hidden="true"><g class="trail"><rect x="58" y="205" width="4" height="40" rx="2" fill="#4aa3ff" opacity=".5"/></g>' +
-    '<g class="flame"><path d="M48 214 Q60 300 72 214 Z" fill="#ff9d3c"/><path d="M53 214 Q60 270 67 214 Z" fill="#fff3c4"/></g>' +
-    '<path d="M60 20 Q84 60 84 130 L84 214 L36 214 L36 130 Q36 60 60 20 Z" fill="#eef0f3"/><path d="M60 20 Q72 40 77 70 L43 70 Q48 40 60 20 Z" fill="#4aa3ff"/>' +
-    '<circle cx="60" cy="112" r="14" fill="#0b0d11" stroke="#9aa0aa" stroke-width="4"/><circle cx="60" cy="112" r="7" fill="#2a6df4"/>' +
-    '<path d="M36 170 L8 224 L36 214 Z M84 170 L112 224 L84 214 Z" fill="#9aa0aa"/><rect x="48" y="214" width="24" height="10" rx="3" fill="#5b616b"/></svg>';
+  hero.innerHTML = '<img class="fh-image" src="assets/mars-murray-buttes.jpg" alt="Curiosity rover panorama across the Murray Buttes on Mars" fetchpriority="high">' +
+    '<div class="fh-text"><span class="fh-eyebrow"><i></i> MISSION ARCHITECT · FLIGHT DESIGN</span>' +
+    '<h2>Design for the <em>journey beyond.</em></h2>' +
+    '<p>Shape a spacecraft around its destination, balance real engineering trade-offs, and fly the mission.</p>' +
+    '<div class="fh-actions"><a class="fh-cta" href="#destination-grid">CHOOSE A DESTINATION <span aria-hidden="true">→</span></a>' +
+    '<span class="fh-fact"><strong>04</strong> DESTINATIONS</span><span class="fh-fact"><strong>06</strong> MISSION PHASES</span></div></div>' +
+    '<div class="fh-feature"><span>FEATURED LANDSCAPE</span><strong>Murray Buttes</strong><small>GALE CRATER · MARS</small></div>' +
+    '<a class="fh-credit" href="https://photojournal.jpl.nasa.gov/catalog/PIA20840" target="_blank" rel="noopener noreferrer">IMAGE: NASA / JPL-CALTECH / MSSS</a>';
   brief.insertBefore(hero, brief.firstChild);
-  fetch('assets/rocket_flow.mp4', { method: 'HEAD' }).then(r => { if (!r.ok) return; const v = Object.assign(document.createElement('video'), { src: 'assets/rocket_flow.mp4', autoplay: true, muted: true, loop: true, playsInline: true }); v.setAttribute('muted', ''); hero.insertBefore(v, hero.firstChild); hero.querySelector('svg').remove(); }).catch(() => {});
+  const videoConfig = document.querySelector('meta[name="mission-hero-video"]');
+  if (videoConfig && videoConfig.content.trim()) {
+    const video = Object.assign(document.createElement('video'), {
+      src: videoConfig.content.trim(),
+      autoplay: true,
+      muted: true,
+      loop: true,
+      playsInline: true,
+      preload: 'metadata'
+    });
+    video.addEventListener('loadeddata', () => hero.classList.add('has-hero-video'), { once: true });
+    video.addEventListener('error', () => {
+      console.warn('Mission hero video could not be loaded; keeping the NASA image.');
+      video.remove();
+    }, { once: true });
+    hero.insertBefore(video, hero.firstChild);
+  }
 })();
